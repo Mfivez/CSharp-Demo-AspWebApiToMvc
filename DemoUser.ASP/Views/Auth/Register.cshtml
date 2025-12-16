@@ -1,0 +1,52 @@
+﻿@{
+    ViewData["Title"] = "Register";
+}
+
+<div class="row justify-content-center mt-5">
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+            <div class="card-header text-center">
+                <h4>Register</h4>
+            </div>
+
+            <div class="card-body">
+                <form method="post">
+                    <div class="mb-3">
+                        <label class="form-label">Username</label>
+                        <input name="username"
+                               class="form-control"
+                               placeholder="Choose a username"
+                               required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Password</label>
+                        <input name="password"
+                               type="password"
+                               class="form-control"
+                               placeholder="Choose a password"
+                               required />
+                    </div>
+
+                    <button type="submit" class="btn btn-success w-100">
+                        Register
+                    </button>
+                </form>
+
+                @if (ViewBag.Error != null)
+                {
+                    <div class="alert alert-danger mt-3 text-center">
+                        @ViewBag.Error
+                    </div>
+                }
+            </div>
+
+            <div class="card-footer text-center">
+                <small>
+                    Already have an account ?
+                    <a asp-action="Login">Login</a>
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
