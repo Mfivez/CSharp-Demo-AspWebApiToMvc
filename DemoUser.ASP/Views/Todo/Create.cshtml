@@ -1,22 +1,51 @@
-﻿<h1>Create Todo</h1>
+﻿@{
+    ViewData["Title"] = "Create Todo";
+}
 
-<input id="title" class="form-control" placeholder="Title" />
-<br />
-<button class="btn btn-primary" onclick="createTodo()">Save</button>
-<a href="/Todo/Index" class="btn btn-secondary">Back</a>
+<h2>Create Todo</h2>
+
+<div class="mb-3">
+    <label class="form-label">Title</label>
+    <input id="title" class="form-control" />
+</div>
+
+<button class="btn btn-success" onclick="createTodo()">Create</button>
 
 <script>
     const API_BASE = "http://localhost:5062/api/todos";
+    const JWT = "@Context.Session.GetString("JWT")";
 
-    async function createTodo() {
-        const title = document.getElementById("title").value;
+    if (!JWT) {
+        window.location.href = "/Auth/Login";
+    }
 
-        await fetch(API_BASE, {
+    function createTodo() {
+        const title = document.getElementById("title").value.trim();
+
+        if (title.length < 3) {
+            alert("Title must be at least 3 characters long.");
+            return;
+        }
+
+        fetch(API_BASE, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+                "Authorization": "Bearer " + JWT,
+                "Content-Type": "application/json"
+            },
             body: JSON.stringify({ title })
-        });
+        })
+        .then(res => {
+            if (res.status === 401) {
+                window.location.href = "/Auth/Login";
+                return;
+            }
 
-        window.location.href = "/Todo/Index";
+            if (res.ok) {
+                window.location.href = "/Todo/Index";
+            } else {
+                alert("Failed to create todo.");
+            }
+        });
     }
 </script>

@@ -1,45 +1,54 @@
 ﻿@{
+    ViewData["Title"] = "Edit Todo";
     var todoId = ViewBag.TodoId;
 }
 
-<h1>Edit Todo</h1>
+<h2>Edit Todo</h2>
 
-<input id="title" class="form-control" />
-<br />
+<div class="mb-3">
+    <label class="form-label">Title</label>
+    <input id="title" class="form-control" />
+</div>
 
-<label>
-    <input type="checkbox" id="isDone" /> Done
-</label>
+<div class="form-check mb-3">
+    <input id="isDone" class="form-check-input" type="checkbox" />
+    <label class="form-check-label">Done</label>
+</div>
 
-<br />
-<br />
 <button class="btn btn-primary" onclick="updateTodo()">Save</button>
-<a href="/Todo/Index" class="btn btn-secondary">Back</a>
 
 <script>
     const API_BASE = "http://localhost:5062/api/todos";
-    const ID = "@todoId";
+    const JWT = "@Context.Session.GetString("JWT")";
+    const TODO_ID = "@todoId";
 
-    async function loadTodo() {
-        const res = await fetch(`${API_BASE}/${ID}`);
-        const t = await res.json();
-
-        document.getElementById("title").value = t.title;
-        document.getElementById("isDone").checked = t.isDone;
+    if (!JWT) {
+        window.location.href = "/Auth/Login";
     }
 
-    async function updateTodo() {
-        await fetch(`${API_BASE}/${ID}`, {
+    function updateTodo() {
+        const title = document.getElementById("title").value.trim();
+        const isDone = document.getElementById("isDone").checked;
+
+        fetch(`${API_BASE}/${TODO_ID}`, {
             method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                title: document.getElementById("title").value,
-                isDone: document.getElementById("isDone").checked
-            })
+            headers: {
+                "Authorization": "Bearer " + JWT,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ title, isDone })
+        })
+        .then(res => {
+            if (res.status === 401) {
+                window.location.href = "/Auth/Login";
+                return;
+            }
+
+            if (res.ok) {
+                window.location.href = "/Todo/Index";
+            } else {
+                alert("Failed to update todo.");
+            }
         });
-
-        window.location.href = "/Todo/Index";
     }
-
-    loadTodo();
 </script>

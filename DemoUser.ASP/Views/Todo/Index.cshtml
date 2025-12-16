@@ -2,53 +2,81 @@
     ViewData["Title"] = "Todos";
 }
 
-<h1>Todos</h1>
+<h2>My Todos</h2>
 
-<p>
-    <a asp-action="Create" class="btn btn-primary">New Todo</a>
-</p>
+<a class="btn btn-primary mb-3" asp-action="Create">New Todo</a>
 
-<table class="table">
+<table class="table table-striped">
     <thead>
         <tr>
             <th>Title</th>
             <th>Done</th>
-            <th></th>
+            <th>Created</th>
+            <th>Actions</th>
         </tr>
     </thead>
-    <tbody id="todosBody"></tbody>
+    <tbody id="todos"></tbody>
 </table>
 
 <script>
     const API_BASE = "http://localhost:5062/api/todos";
+    const JWT = "@Context.Session.GetString("JWT")";
 
-    async function loadTodos() {
-        const res = await fetch(API_BASE);
-        const todos = await res.json();
-
-        const body = document.getElementById("todosBody");
-        body.innerHTML = "";
-
-        for (const t of todos) {
-            body.innerHTML += `
-            <tr>
-                <td>${t.title}</td>
-                <td>${t.isDone ? "Yes" : "No"}</td>
-                <td>
-                    <a href="/Todo/Edit/${t.id}" class="btn btn-sm btn-secondary">Edit</a>
-                    <button class="btn btn-sm btn-danger"
-                            onclick="deleteTodo('${t.id}')">
-                        Delete
-                    </button>
-                </td>
-            </tr>`;
-        }
+    if (!JWT) {
+        window.location.href = "/Auth/Login";
     }
 
-    async function deleteTodo(id) {
-        if (!confirm("Delete this todo?")) return;
-        await fetch(`${API_BASE}/${id}`, { method: "DELETE" });
-        loadTodos();
+    function handleUnauthorized(res) {
+        if (res.status === 401) {
+            window.location.href = "/Auth/Login";
+            return true;
+        }
+        return false;
+    }
+
+    function loadTodos() {
+        fetch(API_BASE, {
+            headers: {
+                "Authorization": "Bearer " + JWT
+            }
+        })
+        .then(res => {
+            if (handleUnauthorized(res)) return;
+            return res.json();
+        })
+        .then(data => {
+            const tbody = document.getElementById("todos");
+            tbody.innerHTML = "";
+
+            data.forEach(t => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${t.title}</td>
+                        <td>${t.isDone ? "yes" : "no"}</td>
+                        <td>${new Date(t.createdAt).toLocaleDateString()}</td>
+                        <td>
+                            <a class="btn btn-sm btn-secondary" href="/Todo/Edit/${t.id}">Edit</a>
+                            <button class="btn btn-sm btn-danger" onclick="deleteTodo('${t.id}')">Delete</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        });
+    }
+
+    function deleteTodo(id) {
+        if (!confirm("Delete this todo ?")) return;
+
+        fetch(`${API_BASE}/${id}`, {
+            method: "DELETE",
+            headers: {
+                "Authorization": "Bearer " + JWT
+            }
+        })
+        .then(res => {
+            if (handleUnauthorized(res)) return;
+            loadTodos();
+        });
     }
 
     loadTodos();

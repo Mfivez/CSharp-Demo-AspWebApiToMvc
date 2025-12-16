@@ -5,14 +5,16 @@ namespace DemoUser.Domain.Entities
     public class Todo
     {
         public Guid Id { get; }
+        public Guid UserId { get; }
         public string Title { get; private set; }
         public bool IsDone { get; private set; }
         public DateTime CreatedAt { get; }
 
         // Ctor pour hydratation depuis la DB
-        public Todo(Guid id, string title, bool isDone, DateTime createdAt)
+        public Todo(Guid id, Guid userId, string title, bool isDone, DateTime createdAt)
         {
             Id = id;
+            UserId = userId;
             Title = title;
             IsDone = isDone;
             CreatedAt = createdAt;

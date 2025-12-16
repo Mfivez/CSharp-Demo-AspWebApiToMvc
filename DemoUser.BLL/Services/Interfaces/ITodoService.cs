@@ -6,11 +6,11 @@ namespace DemoUser.BLL.Services.Interfaces
 {
     public interface ITodoService
     {
-        IEnumerable<Todo> GetAll();
-        Todo? GetById(Guid id);
-        Todo Create(string title);
-        void MarkAsDone(Guid id);
-        void Rename(Guid id, string newTitle);
-        void Delete(Guid id);
+        IEnumerable<Todo> GetAll(Guid userId);
+        Todo? GetById(Guid userId, Guid todoId);
+        Todo Create(Guid userId, string title);
+        bool Rename(Guid userId, Guid todoId, string newTitle);
+        bool MarkAsDone(Guid userId, Guid todoId);
+        bool Delete(Guid userId, Guid todoId);
     }
 }

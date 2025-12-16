@@ -15,43 +15,45 @@ namespace DemoUser.BLL.Services.Implementations
             _todoRepo = todoRepo;
         }
 
-        public IEnumerable<Todo> GetAll()
-            => _todoRepo.GetAll();
+        public IEnumerable<Todo> GetAll(Guid userId)
+            => _todoRepo.GetAll(userId);
 
-        public Todo? GetById(Guid id)
-            => _todoRepo.GetById(id);
+        public Todo? GetById(Guid userId, Guid todoId)
+            => _todoRepo.GetById(userId, todoId);
 
-        public Todo Create(string title)
+        public Todo Create(Guid userId, string title)
         {
+            if (userId == Guid.Empty)
+                throw new ArgumentException("UserId is required.", nameof(userId));
+
             if (string.IsNullOrWhiteSpace(title))
                 throw new ArgumentException("Title is required.", nameof(title));
 
-            var todo = new Todo(title);
-            return _todoRepo.Insert(todo);
+            var todo = new Todo(
+                id: Guid.NewGuid(),
+                userId: userId,
+                title: title.Trim(),
+                isDone: false,
+                createdAt: DateTime.UtcNow
+            );
+
+            _todoRepo.Insert(todo);
+
+            return todo;
         }
 
-        public void MarkAsDone(Guid id)
-        {
-            var todo = _todoRepo.GetById(id);
-            if (todo is null) return;
-
-            todo.MarkAsDone();
-            _todoRepo.Update(todo);
-        }
-
-        public void Rename(Guid id, string newTitle)
+        public bool Rename(Guid userId, Guid todoId, string newTitle)
         {
             if (string.IsNullOrWhiteSpace(newTitle))
                 throw new ArgumentException("Title is required.", nameof(newTitle));
 
-            var todo = _todoRepo.GetById(id);
-            if (todo is null) return;
-
-            todo.Rename(newTitle);
-            _todoRepo.Update(todo);
+            return _todoRepo.Rename(userId, todoId, newTitle.Trim());
         }
 
-        public void Delete(Guid id)
-            => _todoRepo.Delete(id);
+        public bool MarkAsDone(Guid userId, Guid todoId)
+            => _todoRepo.MarkAsDone(userId, todoId);
+
+        public bool Delete(Guid userId, Guid todoId)
+            => _todoRepo.Delete(userId, todoId);
     }
 }

@@ -17,12 +17,9 @@ namespace DemoUser.DAL.Repositories
             _connectionString = connectionString;
         }
 
-        private DbConnection CreateConnection()
-        {
-            return new SqlConnection(_connectionString);
-        }
+        private DbConnection CreateConnection() => new SqlConnection(_connectionString);
 
-        public IEnumerable<Todo> GetAll()
+        public IEnumerable<Todo> GetAll(Guid userId)
         {
             var list = new List<Todo>();
 
@@ -31,11 +28,9 @@ namespace DemoUser.DAL.Repositories
 
             using var command = connection.CreateCommand();
             command.CommandType = CommandType.Text;
-            command.CommandText = @"
-                SELECT Id, Title, IsDone, CreatedAt
-                FROM [Todo]
-                ORDER BY CreatedAt DESC;
-            ";
+            command.CommandText = @"SELECT * FROM [Todo] WHERE UserId = @userId;";
+
+            AddParameter(command, "@userId", userId);
 
             using var reader = command.ExecuteReader();
             while (reader.Read())
@@ -46,7 +41,7 @@ namespace DemoUser.DAL.Repositories
             return list;
         }
 
-        public Todo? GetById(Guid id)
+        public Todo? GetById(Guid userId, Guid todoId)
         {
             using var connection = CreateConnection();
             connection.Open();
@@ -54,12 +49,12 @@ namespace DemoUser.DAL.Repositories
             using var command = connection.CreateCommand();
             command.CommandType = CommandType.Text;
             command.CommandText = @"
-                SELECT Id, Title, IsDone, CreatedAt
-                FROM [Todo]
-                WHERE Id = @Id;
+                SELECT * FROM [Todo]
+                WHERE Id = @todoId AND UserId = @userId;
             ";
 
-            AddParameter(command, "@Id", id);
+            AddParameter(command, "@todoId", todoId);
+            AddParameter(command, "@userId", userId);
 
             using var reader = command.ExecuteReader();
             if (!reader.Read()) return null;
@@ -67,7 +62,7 @@ namespace DemoUser.DAL.Repositories
             return MapTodo(reader);
         }
 
-        public Todo Insert(Todo todo)
+        public void Insert(Todo todo)
         {
             using var connection = CreateConnection();
             connection.Open();
@@ -75,26 +70,20 @@ namespace DemoUser.DAL.Repositories
             using var command = connection.CreateCommand();
             command.CommandType = CommandType.Text;
             command.CommandText = @"
-                INSERT INTO [Todo] (Id, Title, IsDone, CreatedAt)
-                VALUES (@Id, @Title, @IsDone, @CreatedAt);
-
-                SELECT Id, Title, IsDone, CreatedAt
-                FROM [Todo]
-                WHERE Id = @Id;
+                INSERT INTO [Todo] (Id, UserId, Title, IsDone, CreatedAt)
+                VALUES (@Id, @UserId, @Title, @IsDone, @CreatedAt);
             ";
 
             AddParameter(command, "@Id", todo.Id);
+            AddParameter(command, "@UserId", todo.UserId);
             AddParameter(command, "@Title", todo.Title);
             AddParameter(command, "@IsDone", todo.IsDone);
             AddParameter(command, "@CreatedAt", todo.CreatedAt);
 
-            using var reader = command.ExecuteReader();
-            if (!reader.Read()) throw new InvalidOperationException("Failed to insert todo.");
-
-            return MapTodo(reader);
+            command.ExecuteNonQuery();
         }
 
-        public void Update(Todo todo)
+        public bool Rename(Guid userId, Guid todoId, string newTitle)
         {
             using var connection = CreateConnection();
             connection.Open();
@@ -103,19 +92,37 @@ namespace DemoUser.DAL.Repositories
             command.CommandType = CommandType.Text;
             command.CommandText = @"
                 UPDATE [Todo]
-                SET Title = @Title,
-                    IsDone = @IsDone
-                WHERE Id = @Id;
+                SET Title = @newTitle
+                WHERE Id = @todoId AND UserId = @userId;
             ";
 
-            AddParameter(command, "@Id", todo.Id);
-            AddParameter(command, "@Title", todo.Title);
-            AddParameter(command, "@IsDone", todo.IsDone);
+            AddParameter(command, "@newTitle", newTitle);
+            AddParameter(command, "@todoId", todoId);
+            AddParameter(command, "@userId", userId);
 
-            command.ExecuteNonQuery();
+            return command.ExecuteNonQuery() > 0;
         }
 
-        public void Delete(Guid id)
+        public bool MarkAsDone(Guid userId, Guid todoId)
+        {
+            using var connection = CreateConnection();
+            connection.Open();
+
+            using var command = connection.CreateCommand();
+            command.CommandType = CommandType.Text;
+            command.CommandText = @"
+                UPDATE [Todo]
+                SET IsDone = 1
+                WHERE Id = @todoId AND UserId = @userId;
+            ";
+
+            AddParameter(command, "@todoId", todoId);
+            AddParameter(command, "@userId", userId);
+
+            return command.ExecuteNonQuery() > 0;
+        }
+
+        public bool Delete(Guid userId, Guid todoId)
         {
             using var connection = CreateConnection();
             connection.Open();
@@ -124,18 +131,20 @@ namespace DemoUser.DAL.Repositories
             command.CommandType = CommandType.Text;
             command.CommandText = @"
                 DELETE FROM [Todo]
-                WHERE Id = @Id;
+                WHERE Id = @todoId AND UserId = @userId;
             ";
 
-            AddParameter(command, "@Id", id);
+            AddParameter(command, "@todoId", todoId);
+            AddParameter(command, "@userId", userId);
 
-            command.ExecuteNonQuery();
+            return command.ExecuteNonQuery() > 0;
         }
 
         private static Todo MapTodo(IDataRecord record)
         {
             return new Todo(
                 id: (Guid)record["Id"],
+                userId: (Guid)record["UserId"],
                 title: (string)record["Title"],
                 isDone: (bool)record["IsDone"],
                 createdAt: (DateTime)record["CreatedAt"]
@@ -146,7 +155,7 @@ namespace DemoUser.DAL.Repositories
         {
             var parameter = command.CreateParameter();
             parameter.ParameterName = name;
-            parameter.Value = value;
+            parameter.Value = value ?? DBNull.Value;
             command.Parameters.Add(parameter);
         }
     }

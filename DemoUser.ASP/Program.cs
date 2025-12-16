@@ -1,6 +1,12 @@
+using DemoUser.ASP.Clients;
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews();
+builder.Services.AddHttpClient<AuthApiClient>();
+
+builder.Services.AddSession();
+
 
 var app = builder.Build();
 
@@ -14,6 +20,8 @@ if (!app.Environment.IsDevelopment())
 app.UseStaticFiles();
 app.UseRouting();
 app.UseAuthorization();
+
+app.UseSession();
 
 app.MapControllerRoute(
     name: "default",
