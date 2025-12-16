@@ -1,0 +1,22 @@
+﻿<h1>Create Todo</h1>
+
+<input id="title" class="form-control" placeholder="Title" />
+<br />
+<button class="btn btn-primary" onclick="createTodo()">Save</button>
+<a href="/Todo/Index" class="btn btn-secondary">Back</a>
+
+<script>
+    const API_BASE = "http://localhost:5062/api/todos";
+
+    async function createTodo() {
+        const title = document.getElementById("title").value;
+
+        await fetch(API_BASE, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ title })
+        });
+
+        window.location.href = "/Todo/Index";
+    }
+</script>

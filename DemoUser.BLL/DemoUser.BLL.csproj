@@ -1,0 +1,13 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DemoUser.DAL\DemoUser.DAL.csproj" />
+    <ProjectReference Include="..\DemoUser.Domain\DemoUser.Domain.csproj" />
+  </ItemGroup>
+
+</Project>

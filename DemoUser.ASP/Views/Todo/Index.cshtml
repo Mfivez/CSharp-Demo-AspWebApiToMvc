@@ -1,0 +1,55 @@
+﻿@{
+    ViewData["Title"] = "Todos";
+}
+
+<h1>Todos</h1>
+
+<p>
+    <a asp-action="Create" class="btn btn-primary">New Todo</a>
+</p>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Title</th>
+            <th>Done</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody id="todosBody"></tbody>
+</table>
+
+<script>
+    const API_BASE = "http://localhost:5062/api/todos";
+
+    async function loadTodos() {
+        const res = await fetch(API_BASE);
+        const todos = await res.json();
+
+        const body = document.getElementById("todosBody");
+        body.innerHTML = "";
+
+        for (const t of todos) {
+            body.innerHTML += `
+            <tr>
+                <td>${t.title}</td>
+                <td>${t.isDone ? "Yes" : "No"}</td>
+                <td>
+                    <a href="/Todo/Edit/${t.id}" class="btn btn-sm btn-secondary">Edit</a>
+                    <button class="btn btn-sm btn-danger"
+                            onclick="deleteTodo('${t.id}')">
+                        Delete
+                    </button>
+                </td>
+            </tr>`;
+        }
+    }
+
+    async function deleteTodo(id) {
+        if (!confirm("Delete this todo?")) return;
+        await fetch(`${API_BASE}/${id}`, { method: "DELETE" });
+        loadTodos();
+    }
+
+    loadTodos();
+</script>

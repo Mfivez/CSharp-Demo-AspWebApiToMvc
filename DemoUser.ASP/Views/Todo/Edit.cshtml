@@ -1,0 +1,45 @@
+﻿@{
+    var todoId = ViewBag.TodoId;
+}
+
+<h1>Edit Todo</h1>
+
+<input id="title" class="form-control" />
+<br />
+
+<label>
+    <input type="checkbox" id="isDone" /> Done
+</label>
+
+<br />
+<br />
+<button class="btn btn-primary" onclick="updateTodo()">Save</button>
+<a href="/Todo/Index" class="btn btn-secondary">Back</a>
+
+<script>
+    const API_BASE = "http://localhost:5062/api/todos";
+    const ID = "@todoId";
+
+    async function loadTodo() {
+        const res = await fetch(`${API_BASE}/${ID}`);
+        const t = await res.json();
+
+        document.getElementById("title").value = t.title;
+        document.getElementById("isDone").checked = t.isDone;
+    }
+
+    async function updateTodo() {
+        await fetch(`${API_BASE}/${ID}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                title: document.getElementById("title").value,
+                isDone: document.getElementById("isDone").checked
+            })
+        });
+
+        window.location.href = "/Todo/Index";
+    }
+
+    loadTodo();
+</script>
